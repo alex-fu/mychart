@@ -2,72 +2,178 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <!-- 引入 echarts.js -->
+    <title>Transtrend</title>
     <script src="vendor/echarts.js"></script>
     <script src="vendor/jquery.min.js"></script>
 </head>
 <body>
-<div id="main" style="width: 600px;height:400px;"></div>
+<div><p>Trans</p></div>
+<div id="g2011" style="float: left;width: 800px;height:400px;"><p>Loading for 2011...</p></div>
+<div id="g2012" style="float: left;width: 800px;height:400px;"><p>Loading for 2012...</p></div>
+<div id="g2013" style="float: left;width: 800px;height:400px;"><p>Loading for 2013...</p></div>
+<div id="g2014" style="float: left;width: 800px;height:400px;"><p>Loading for 2014...</p></div>
+<div id="g2015" style="float: left;width: 800px;height:400px;"><p>Loading for 2015...</p></div>
+<div id="g2016" style="float: left;width: 800px;height:400px;"><p>Loading for 2016...</p></div>
+<div id="gall" style="width: 100%;height:400px;"><p>Loading for [2011, 2016]...</p></div>
 <script>
-    var raw = [];
 
-    $.get('http://127.0.0.1:5000/transtrend').done(function (data) {
-        raw = data
-    })
+    var c2011 = echarts.init(document.getElementById('g2011'));
+    var c2012 = echarts.init(document.getElementById('g2012'));
+    var c2013 = echarts.init(document.getElementById('g2013'));
+    var c2014 = echarts.init(document.getElementById('g2014'));
+    var c2015 = echarts.init(document.getElementById('g2015'));
+    var c2016 = echarts.init(document.getElementById('g2016'));
+    var call = echarts.init(document.getElementById('gall'));
 
-    var sum = 0.0
-    var data = raw.map(function(x) {
-        var d = new Date(x.date)
-        sum += x.rate
-        return {
-            "name": d.toString(),
-            "value": [
-                [d.getFullYear(), d.getMonth() + 1, d.getDate()].join('/'),
-                sum
-            ]
-        }
-    })
-
-    option = {
-        title: {
-            text: 'Transtrend'
-        },
-        tooltip: {
-            trigger: 'axis',
-            formatter: function (params) {
-                params = params[0];
-                var date = new Date(params.name);
-                return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + params.value[1];
-            },
-            axisPointer: {
-                animation: false
+    var calc_line_data = function (raw) {
+        var sum = 0.0;
+        return raw.result.map(function (x) {
+            var d = new Date(x.date);
+            sum += x.rate;
+            return {
+                "name": d.toString(),
+                "value": [
+                    [d.getFullYear(), d.getMonth() + 1, d.getDate()].join('/'),
+                    sum.toFixed(2)
+                ]
             }
-        },
-        xAxis: {
-            type: 'time',
-            splitLine: {
-                show: false
-            }
-        },
-        yAxis: {
-            type: 'value',
-            boundaryGap: [0, '100%'],
-            splitLine: {
-                show: false
-            }
-        },
-        series: [{
-            name: '模拟数据',
-            type: 'line',
-            showSymbol: false,
-            hoverAnimation: false,
-            data: data
-        }]
+        });
     };
 
-    var myChart = echarts.init(document.getElementById('main'));
-    myChart.setOption(option);
+    var show = function (echart, year) {
+        return function (r1, r2, r3, r4) {
+            var d1 = calc_line_data(r1);
+            var d2 = calc_line_data(r2);
+            var d3 = calc_line_data(r3);
+            var d4 = calc_line_data(r4);
+
+            option = {
+                title: {
+                    text: 'Transtrend - ' + (year ? year : 'all')
+                },
+                tooltip: {
+                    trigger: 'axis',
+//                    formatter: function (params) {
+//                        params = params[0];
+//                        var date = new Date(params.name);
+//                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + (params.value[1] * 100).toPrecision(3) + '%';
+//                    },
+//                    axisPointer: {
+//                        animation: false
+//                    }
+                },
+                legend: {
+                    data: ['ndayclose=2', 'ndayclose=3', 'ndayclose=4', 'ndayclose=5']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                toolbox: {
+                    feature: {
+                        saveAsImage: {}
+                    }
+                },
+                xAxis: {
+                    type: 'time'
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [
+                    {
+                        name: 'ndayclose=2',
+                        type: 'line',
+                        data: d1
+                    },
+                    {
+                        name: 'ndayclose=3',
+                        type: 'line',
+                        data: d2
+                    },
+                    {
+                        name: 'ndayclose=4',
+                        type: 'line',
+                        data: d3
+                    },
+                    {
+                        name: 'ndayclose=5',
+                        type: 'line',
+                        data: d4
+                    }
+                ]
+            };
+
+//            option = {
+//                title: {
+//                    text: 'Transtrend - ' + year
+//                },
+//                tooltip: {
+//                    trigger: 'axis',
+//                    formatter: function (params) {
+//                        params = params[0];
+//                        var date = new Date(params.name);
+//                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + (params.value[1] * 100).toPrecision(3) + '%';
+//                    },
+//                    axisPointer: {
+//                        animation: false
+//                    }
+//                },
+//                xAxis: {
+//                    type: 'time',
+//                    splitLine: {
+//                        show: false
+//                    }
+//                },
+//                yAxis: {
+//                    type: 'value'
+//                },
+//                series: [{
+//                    name: '模拟数据',
+//                    type: 'line',
+//                    showSymbol: false,
+//                    hoverAnimation: false,
+//                    data: data
+//                }]
+//            };
+            echart.setOption(option);
+        }
+    };
+
+    var restapi_uri = 'http://127.0.0.1:5000';
+
+    var get_data = function (year, ndayclose) {
+        var url = restapi_uri + '/transtrend?'
+        if(year) {
+            url += ('year=' + year + '&');
+        }
+        if(ndayclose) {
+            url += ('ndayclose=' + ndayclose);
+        }
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'JSON'
+        })
+    };
+
+    var get_and_show = function (echart, year) {
+        $.when(get_data(year, 2), get_data(year, 3), get_data(year, 4), get_data(year, 5))
+                .then(function (r1, r2, r3, r4) {
+                    show(echart, year)(r1[0], r2[0], r3[0], r4[0])
+                });
+    };
+
+    get_and_show(c2011, '2011');
+    get_and_show(c2012, '2012');
+    get_and_show(c2013, '2013');
+    get_and_show(c2014, '2014');
+    get_and_show(c2015, '2015');
+    get_and_show(c2016, '2016');
+    get_and_show(call);
+
 </script>
 </body>
 </html>
