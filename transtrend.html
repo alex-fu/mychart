@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transtrend</title>
+</head>
+<body>
+<h1>量价齐升策略</h1>
+<pre>
+策略描述：
+    开仓条件：连续两日收盘价下跌后，再连续两日量价齐升
+    平仓条件：根据参数ndayclose指定，该参数表示在ndayclose天后平仓
+    止损条件：未到平仓条件时收盘价比买入价亏损5%
+
+    回测参数：
+        1. 从2011年到2016年，分别对每年进行回测，使用日线数据回测
+        2. ndayclose分别选择2,3,4,5参与回测
+    回测曲线含义：
+        1. 横轴表示日期，纵轴表示策略的盈利比例
+        2. 盈利比例的计算方法是：
+            1. 如何交易
+                * 买入：假设每个交易日都用相同总量的资金，均等买入当日所有产生信号的股票，买入价格采用当日收盘价。
+                    > 举例：每天开仓都用1000万元，假设当日有10个股票产生信号，则每个股票买入100万元，假设按收盘价买入。
+                * 卖出：如果当日有交易达到平仓条件则卖出平仓；如果当日有未到平仓条件但达到止损条件则卖出止损。
+            2. 如何计算盈利比例
+                * 在每个交易日，如果当日有卖出，则计算所有卖出后产生的收益/亏损比例之和，即为当日的盈利比例；如果当日没有卖出，则当日盈利比例为0。
+        3. 回测曲线起始位置是0，然后随着时间推移，不断累加每个交易日的盈利比例，连线后即产生一条回测曲线。
+        4. 本次回测会选择ndayclose分别为2,3,4,5参与回测，并进行对比
+        5. 本次回测结果还会和“创业板指”和“上证指数”进行对比
+            > 这两个指数的曲线的含义是：假设在回测开始时买入指数，则每个交易日对应的曲线上的值表示买入指数的盈利比例
+</pre>
+<h2>回测结果</h2>
+<pre>若加载速度慢，请稍等</pre>
+<p>.</p>
+<div id="g2011" style="float: left;width: 100%;height:400px;"><h4 align="center">正在加载2011年回测结果...</h4></div>
+<p>.</p>
+<div id="g2012" style="float: left;width: 100%;height:400px;"><h4 align="center">正在加载2012年回测结果...</h4></div>
+<p>.</p>
+<div id="g2013" style="float: left;width: 100%;height:400px;"><h4 align="center">正在加载2013年回测结果...</h4></div>
+<p>.</p>
+<div id="g2014" style="float: left;width: 100%;height:400px;"><h4 align="center">正在加载2014年回测结果...</h4></div>
+<p>.</p>
+<div id="g2015" style="float: left;width: 100%;height:400px;"><h4 align="center">正在加载2015年回测结果...</h4></div>
+<p>.</p>
+<div id="g2016" style="float: left;width: 100%;height:400px;"><h4 align="center">正在加载2016年回测结果...</h4></div>
+<p>.</p>
+<div id="gall" style="width: 100%;height:400px;"><h4 align="center">正在加载2011~2016年回测结果...</h4></div>
+<p>.</p>
+
+<script src="vendor/echarts.js"></script>
+<script src="vendor/jquery.min.js"></script>
+<script>
+
+    var calc_line_data = function (raw) {
+        var sum = 0.0;
+        return raw.result.map(function (x) {
+            var d = new Date(x.date);
+            sum += x.rate;
+            return {
+                "name": d.toString(),
+                "value": [
+                    [d.getFullYear(), d.getMonth() + 1, d.getDate()].join('/'),
+                    sum.toFixed(2)
+                ]
+            }
+        });
+    };
+
+    var calc_index_data = function (raw) {
+        var base = raw.result[0].close;
+        return raw.result.map(function (x) {
+            var d = new Date(x.date);
+            var v = (x.close - base) / base;
+            return {
+                "name": d.toString(),
+                "value": [
+                    [d.getFullYear(), d.getMonth() + 1, d.getDate()].join('/'),
+                    v.toFixed(2)
+                ]
+            }
+        })
+    };
+
+    var show = function (echart, year) {
+        return function (r1, r2, r3, r4, r5, r6) {
+            var d1 = calc_line_data(r1);
+            var d2 = calc_line_data(r2);
+            var d3 = calc_line_data(r3);
+            var d4 = calc_line_data(r4);
+            var d5 = calc_index_data(r5);
+            var d6 = calc_index_data(r6);
+
+            option = {
+                title: {
+                    text: 'Transtrend - ' + (year ? year : 'all')
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    showContent: true
+//                    formatter: function (params) {
+//                        params = params[0];
+//                        var date = new Date(params.name);
+//                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + (params.value[1] * 100).toPrecision(3) + '%';
+//                    },
+//                    axisPointer: {
+//                        animation: false
+//                    }
+                },
+                legend: {
+                    data: ['ndayclose=2', 'ndayclose=3', 'ndayclose=4', 'ndayclose=5', '创业板指', '上证指数']
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                toolbox: {
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: false
+                        },
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                xAxis: {
+                    type: 'time'
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [
+                    {
+                        name: 'ndayclose=2',
+                        type: 'line',
+                        data: d1
+                    },
+                    {
+                        name: 'ndayclose=3',
+                        type: 'line',
+                        data: d2
+                    },
+                    {
+                        name: 'ndayclose=4',
+                        type: 'line',
+                        data: d3
+                    },
+                    {
+                        name: 'ndayclose=5',
+                        type: 'line',
+                        data: d4
+                    },
+                    {
+                        name: '创业板指',
+                        type: 'line',
+                        data: d5
+                    },
+                    {
+                        name: '上证指数',
+                        type: 'line',
+                        data: d6
+                    }
+                ]
+            };
+
+//            option = {
+//                title: {
+//                    text: 'Transtrend - ' + year
+//                },
+//                tooltip: {
+//                    trigger: 'axis',
+//                    formatter: function (params) {
+//                        params = params[0];
+//                        var date = new Date(params.name);
+//                        return date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear() + ' : ' + (params.value[1] * 100).toPrecision(3) + '%';
+//                    },
+//                    axisPointer: {
+//                        animation: false
+//                    }
+//                },
+//                xAxis: {
+//                    type: 'time',
+//                    splitLine: {
+//                        show: false
+//                    }
+//                },
+//                yAxis: {
+//                    type: 'value'
+//                },
+//                series: [{
+//                    name: '模拟数据',
+//                    type: 'line',
+//                    showSymbol: false,
+//                    hoverAnimation: false,
+//                    data: data
+//                }]
+//            };
+            echart.setOption(option);
+        }
+    };
+
+    var restapi_uri = 'http://192.168.66.211:5000';
+//    var restapi_uri = 'http://192.168.99.23:5000';
+
+    var get_data = function (year, ndayclose) {
+        var url = restapi_uri + '/transtrend?';
+        if(year) {
+            url += ('year=' + year + '&');
+        }
+        if(ndayclose) {
+            url += ('ndayclose=' + ndayclose);
+        }
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'JSON'
+        })
+    };
+
+    var get_index = function (year, index) {
+        var url = restapi_uri + '/index?';
+        if(year) {
+            url += ('year=' + year + '&');
+        }
+        if(index) {
+            url += ('index=' + index);
+        }
+        return $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'JSON'
+        })
+    };
+
+    var get_and_show = function (year) {
+        $.when(get_data(year, 2), get_data(year, 3), get_data(year, 4), get_data(year, 5),
+                get_index(year, '399006'), get_index(year, '000001'))
+                .then(function (r1, r2, r3, r4, r5, r6) {
+                    var echart;
+                    if(year) {
+                        echart = echarts.init(document.getElementById('g'+year))
+                    } else {
+                        echart = echarts.init(document.getElementById('gall'));
+                    }
+                    show(echart, year)(r1[0], r2[0], r3[0], r4[0], r5[0], r6[0]);
+                });
+    };
+
+    get_and_show('2011');
+    get_and_show('2012');
+    get_and_show('2013');
+    get_and_show('2014');
+    get_and_show('2015');
+    get_and_show('2016');
+    get_and_show();
+
+</script>
+
+</body>
+</html>
